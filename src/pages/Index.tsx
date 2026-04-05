@@ -34,7 +34,26 @@ const testimonials = [
 ];
 
 const Index = () => {
-  const featured = menuItems.filter((i) => i.featured).slice(0, 6);
+  const [featuredItems, setFeaturedItems] = useState<Tables<"menu_items">[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.from("menu_items").select("*").eq("featured", true).limit(6);
+      if (data) setFeaturedItems(data);
+    };
+    load();
+  }, []);
+
+  const featured = featuredItems.map((item) => ({
+    id: item.id,
+    name: item.name,
+    description: item.description || "",
+    price: item.price,
+    category: item.category,
+    image: item.image_url || fallbackImages[item.category] || margherita,
+    featured: item.featured,
+    chefRecommended: item.chef_recommended,
+  }));
 
   return (
     <main>
