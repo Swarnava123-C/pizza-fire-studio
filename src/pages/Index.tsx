@@ -1,13 +1,24 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Clock, Users, Award, ChefHat, Star, MapPin, Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SectionHeading from "@/components/SectionHeading";
 import MenuCard from "@/components/MenuCard";
-import { menuItems } from "@/data/menuData";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import heroPizza from "@/assets/hero-pizza.jpg";
 import chefImg from "@/assets/chef.jpg";
 import interiorImg from "@/assets/restaurant-interior.jpg";
+import margherita from "@/assets/menu/margherita.jpg";
+import burger from "@/assets/menu/burger.jpg";
+import pasta from "@/assets/menu/pasta.jpg";
+import beverages from "@/assets/menu/beverages.jpg";
+import dessert from "@/assets/menu/dessert.jpg";
+
+const fallbackImages: Record<string, string> = {
+  Pizzas: margherita, Burgers: burger, Pasta: pasta, Beverages: beverages, Desserts: dessert,
+};
 
 const faqs = [
   { q: "What are your opening hours?", a: "We're open Monday–Sunday, 11:00 AM – 11:00 PM." },
@@ -23,7 +34,26 @@ const testimonials = [
 ];
 
 const Index = () => {
-  const featured = menuItems.filter((i) => i.featured).slice(0, 6);
+  const [featuredItems, setFeaturedItems] = useState<Tables<"menu_items">[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.from("menu_items").select("*").eq("featured", true).limit(6);
+      if (data) setFeaturedItems(data);
+    };
+    load();
+  }, []);
+
+  const featured = featuredItems.map((item) => ({
+    id: item.id,
+    name: item.name,
+    description: item.description || "",
+    price: item.price,
+    category: item.category,
+    image: item.image_url || fallbackImages[item.category] || margherita,
+    featured: item.featured,
+    chefRecommended: item.chef_recommended,
+  }));
 
   return (
     <main>
