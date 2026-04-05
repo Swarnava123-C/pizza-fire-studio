@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import SectionHeading from "@/components/SectionHeading";
+import { supabase } from "@/integrations/supabase/client";
 
 const ContactPage = () => {
   const [loading, setLoading] = useState(false);
@@ -15,23 +16,25 @@ const ContactPage = () => {
     e.preventDefault();
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    const data: Record<string, string> = {};
-    fd.forEach((v, k) => (data[k] = v.toString()));
+    const name = fd.get("name") as string;
+    const email = fd.get("email") as string;
+    const message = fd.get("message") as string;
 
     try {
-      const res = await fetch("https://formspree.io/f/xreoodow", {
+      // Save to database
+      await supabase.from("contact_submissions").insert({ name, email, message });
+
+      // Also send to Formspree
+      await fetch("https://formspree.io/f/xreoodow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ name, email, message }),
       });
-      if (res.ok) {
-        setSuccess(true);
-        toast.success("Message sent!");
-      } else {
-        toast.error("Failed to send. Please try again.");
-      }
+
+      setSuccess(true);
+      toast.success("Message sent!");
     } catch {
-      toast.error("Network error.");
+      toast.error("Failed to send.");
     } finally {
       setLoading(false);
     }
@@ -41,9 +44,7 @@ const ContactPage = () => {
     <main className="pt-24 pb-20">
       <div className="container mx-auto px-4">
         <SectionHeading title="Get in Touch" subtitle="We'd love to hear from you" />
-
         <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
-          {/* Info */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
             {[
               { icon: Phone, label: "Phone", value: "+91 97480 04981", href: "tel:+919748004981" },
@@ -63,22 +64,15 @@ const ContactPage = () => {
                 </div>
               </div>
             ))}
-
             <div className="rounded-2xl overflow-hidden h-48">
               <iframe
                 title="PizzaFast Location"
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3684.1236754!2d88.3473!3d22.5726!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjLCsDM0JzIxLjQiTiA4OMKwMjAnNTAuMyJF!5e0!3m2!1sen!2sin!4v1"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
+                width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
           </motion.div>
 
-          {/* Form */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
             {success ? (
               <div className="glass-card p-12 text-center">
