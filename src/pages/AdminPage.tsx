@@ -76,7 +76,8 @@ const MenuManager = () => {
   };
 
   const toggleField = async (id: string, field: "featured" | "chef_recommended", current: boolean) => {
-    await supabase.from("menu_items").update({ [field]: !current }).eq("id", id);
+    const update = field === "featured" ? { featured: !current } : { chef_recommended: !current };
+    await supabase.from("menu_items").update(update).eq("id", id);
     load();
   };
 
