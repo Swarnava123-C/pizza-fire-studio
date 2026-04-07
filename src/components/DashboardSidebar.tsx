@@ -11,6 +11,8 @@ import {
   Tag,
   Settings,
   LogOut,
+  CalendarRange,
+  Map,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -48,6 +50,8 @@ const navItems: NavItem[] = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, roles: ["admin"] },
   { title: "Users", url: "/admin/users", icon: Users, roles: ["admin"] },
   { title: "Messages", url: "/admin/messages", icon: MessageSquare, roles: ["admin", "manager"] },
+  { title: "Calendar", url: "/admin/calendar", icon: CalendarRange, roles: ["admin", "manager"] },
+  { title: "Tables", url: "/admin/tables", icon: Map, roles: ["admin", "manager"] },
   { title: "Coupons", url: "/admin/coupons", icon: Tag, roles: ["admin"] },
   { title: "Settings", url: "/admin/settings", icon: Settings, roles: ["admin"] },
 ];
