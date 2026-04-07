@@ -4,6 +4,7 @@ import { Phone, Menu, X, LogIn, LogOut, Shield, Users, UserCheck, ChevronDown } 
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import CartIcon from "@/components/CartIcon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,10 +31,6 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, role, isAdmin, isManager, isStaff, signOut } = useAuth();
-
-  const isDashboard = ["/admin", "/manager", "/staff"].some(
-    (p) => location.pathname.startsWith(p) && !location.pathname.endsWith("/login")
-  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -92,6 +89,8 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center gap-2">
+          <CartIcon />
+
           <a href="tel:+919748004981">
             <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground">
               <Phone className="w-4 h-4" /> Call Now
