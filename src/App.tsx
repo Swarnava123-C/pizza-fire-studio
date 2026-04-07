@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CartProvider } from "@/contexts/CartContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -15,6 +16,8 @@ import ContactPage from "./pages/ContactPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import RoleLoginPage from "@/components/RoleLoginPage";
+import CartPage from "./pages/CartPage";
+import OrderTrackingPage from "./pages/OrderTrackingPage";
 
 // Dashboard pages
 import AdminOverview from "./pages/dashboard/AdminOverview";
@@ -30,6 +33,8 @@ import UsersManager from "./pages/dashboard/UsersManager";
 import MessagesManager from "./pages/dashboard/MessagesManager";
 import CouponsManager from "./pages/dashboard/CouponsManager";
 import SettingsPage from "./pages/dashboard/SettingsPage";
+import CalendarView from "./pages/dashboard/CalendarView";
+import TableMapPage from "./pages/dashboard/TableMapPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +54,8 @@ const AppContent = () => {
         <Route path="/reservations" element={<ReservationsPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/order/:id" element={<OrderTrackingPage />} />
 
         {/* Role login pages */}
         <Route path="/admin/login" element={<RoleLoginPage roleKey="admin" />} />
@@ -66,6 +73,8 @@ const AppContent = () => {
         <Route path="/admin/users" element={<DashboardLayout requiredRole="admin"><UsersManager /></DashboardLayout>} />
         <Route path="/admin/messages" element={<DashboardLayout requiredRole="admin"><MessagesManager /></DashboardLayout>} />
         <Route path="/admin/coupons" element={<DashboardLayout requiredRole="admin"><CouponsManager /></DashboardLayout>} />
+        <Route path="/admin/calendar" element={<DashboardLayout requiredRole="admin"><CalendarView /></DashboardLayout>} />
+        <Route path="/admin/tables" element={<DashboardLayout requiredRole="admin"><TableMapPage /></DashboardLayout>} />
         <Route path="/admin/settings" element={<DashboardLayout requiredRole="admin"><SettingsPage /></DashboardLayout>} />
 
         {/* Manager Dashboard */}
@@ -74,6 +83,8 @@ const AppContent = () => {
         <Route path="/manager/reservations" element={<DashboardLayout requiredRole="manager"><ReservationsManager /></DashboardLayout>} />
         <Route path="/manager/reviews" element={<DashboardLayout requiredRole="manager"><ReviewsManager /></DashboardLayout>} />
         <Route path="/manager/messages" element={<DashboardLayout requiredRole="manager"><MessagesManager /></DashboardLayout>} />
+        <Route path="/manager/calendar" element={<DashboardLayout requiredRole="manager"><CalendarView /></DashboardLayout>} />
+        <Route path="/manager/tables" element={<DashboardLayout requiredRole="manager"><TableMapPage /></DashboardLayout>} />
 
         {/* Staff Dashboard */}
         <Route path="/staff" element={<DashboardLayout requiredRole="staff"><StaffOverview /></DashboardLayout>} />
@@ -94,7 +105,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppContent />
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
