@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, Users, Award, ChefHat, Star, MapPin, Phone, ArrowRight } from "lucide-react";
+import { Clock, Users, Award, ChefHat, MapPin, Phone, ArrowRight } from "lucide-react";
+import ReviewSection from "@/components/ReviewSection";
 import { Button } from "@/components/ui/button";
 import SectionHeading from "@/components/SectionHeading";
 import MenuCard from "@/components/MenuCard";
@@ -27,11 +28,6 @@ const faqs = [
   { q: "Do you offer vegan options?", a: "Absolutely! We have a dedicated vegan section on our menu." },
 ];
 
-const testimonials = [
-  { name: "Priya S.", text: "Best pizza in town! The Margherita is perfection. 10/10 recommend.", rating: 5 },
-  { name: "Rahul M.", text: "Amazing burgers and the vibe is incredible. My family's new favorite spot.", rating: 5 },
-  { name: "Anjali K.", text: "The Chocolate Lava Cake alone is worth the trip. Outstanding quality!", rating: 5 },
-];
 
 const Index = () => {
   const [featuredItems, setFeaturedItems] = useState<Tables<"menu_items">[]>([]);
@@ -170,32 +166,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="section-padding bg-secondary">
-        <div className="container mx-auto">
-          <SectionHeading title="What Our Guests Say" subtitle="Real reviews from real food lovers" />
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="glass-card p-6"
-              >
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-accent text-accent" />
-                  ))}
-                </div>
-                <p className="text-foreground mb-4 leading-relaxed">"{t.text}"</p>
-                <div className="text-sm text-muted-foreground font-medium">— {t.name}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Dynamic Reviews */}
+      <ReviewSection />
 
       {/* Location */}
       <section className="section-padding">
