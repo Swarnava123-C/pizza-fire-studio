@@ -2,9 +2,15 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
+export type AppRole = "admin" | "manager" | "staff" | "user";
+
 interface AuthContextType {
   user: User | null;
+  role: AppRole;
   isAdmin: boolean;
+  isManager: boolean;
+  isStaff: boolean;
+  hasRole: (r: AppRole) => boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -19,14 +25,23 @@ export const useAuth = () => {
   return ctx;
 };
 
+const ROLE_HIERARCHY: Record<AppRole, number> = { admin: 4, manager: 3, staff: 2, user: 1 };
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<AppRole>("user");
   const [loading, setLoading] = useState(true);
 
-  const checkAdmin = async (userId: string) => {
-    const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    setIsAdmin(!!data);
+  const fetchRole = async (userId: string) => {
+    // Check roles in priority order
+    for (const r of ["admin", "manager", "staff"] as AppRole[]) {
+      const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: r });
+      if (data) {
+        setRole(r);
+        return;
+      }
+    }
+    setRole("user");
   };
 
   useEffect(() => {
@@ -34,9 +49,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        await checkAdmin(u.id);
+        await fetchRole(u.id);
       } else {
-        setIsAdmin(false);
+        setRole("user");
       }
       setLoading(false);
     });
@@ -45,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        await checkAdmin(u.id);
+        await fetchRole(u.id);
       }
       setLoading(false);
     });
@@ -70,11 +85,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setIsAdmin(false);
+    setRole("user");
   };
 
+  const isAdmin = role === "admin";
+  const isManager = role === "manager";
+  const isStaff = role === "staff";
+  const hasRole = (r: AppRole) => ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[r];
+
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, role, isAdmin, isManager, isStaff, hasRole, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
