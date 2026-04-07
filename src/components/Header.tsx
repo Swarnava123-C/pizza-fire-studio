@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Phone, Menu, X, LogIn, LogOut, Shield } from "lucide-react";
+import { Phone, Menu, X, LogIn, LogOut, Shield, Users, UserCheck, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -13,16 +19,35 @@ const navLinks = [
   { to: "/contact", label: "Contact" },
 ];
 
+const adminLinks = [
+  { to: "/admin/login", label: "Super Admin Login", icon: Shield },
+  { to: "/manager/login", label: "Manager Login", icon: Users },
+  { to: "/staff/login", label: "Staff Login", icon: UserCheck },
+];
+
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, role, isAdmin, isManager, isStaff, signOut } = useAuth();
+
+  const isDashboard = ["/admin", "/manager", "/staff"].some(
+    (p) => location.pathname.startsWith(p) && !location.pathname.endsWith("/login")
+  );
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
+
+  const getDashboardLink = () => {
+    if (isAdmin) return "/admin";
+    if (isManager) return "/manager";
+    if (isStaff) return "/staff";
+    return null;
+  };
+
+  const dashboardLink = getDashboardLink();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
@@ -43,11 +68,27 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
-          {isAdmin && (
-            <Link to="/admin" className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1 ${location.pathname === "/admin" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-              <Shield className="w-3.5 h-3.5" /> Admin
-            </Link>
-          )}
+
+          {/* Admin dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <Shield className="w-3.5 h-3.5" /> Admin <ChevronDown className="w-3 h-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover border-border">
+              {adminLinks.map((link) => (
+                <DropdownMenuItem key={link.to} onClick={() => navigate(link.to)} className="cursor-pointer">
+                  <link.icon className="w-4 h-4 mr-2" /> {link.label}
+                </DropdownMenuItem>
+              ))}
+              {dashboardLink && (
+                <DropdownMenuItem onClick={() => navigate(dashboardLink)} className="cursor-pointer text-primary">
+                  <Shield className="w-4 h-4 mr-2" /> Go to Dashboard
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -84,11 +125,21 @@ const Header = () => {
                   {link.label}
                 </Link>
               ))}
-              {isAdmin && (
-                <Link to="/admin" onClick={() => setMobileOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-primary flex items-center gap-2">
-                  <Shield className="w-4 h-4" /> Admin Panel
+
+              <div className="border-t border-border my-2" />
+              <span className="px-4 py-1 text-xs text-muted-foreground uppercase tracking-wider">Admin Access</span>
+              {adminLinks.map((link) => (
+                <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+                  <link.icon className="w-4 h-4" /> {link.label}
+                </Link>
+              ))}
+              {dashboardLink && (
+                <Link to={dashboardLink} onClick={() => setMobileOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-primary flex items-center gap-2">
+                  <Shield className="w-4 h-4" /> Go to Dashboard
                 </Link>
               )}
+
+              <div className="border-t border-border my-2" />
               {user ? (
                 <button onClick={() => { handleSignOut(); setMobileOpen(false); }} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground text-left">
                   Sign Out
