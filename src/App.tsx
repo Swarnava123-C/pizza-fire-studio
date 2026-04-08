@@ -35,6 +35,8 @@ import CouponsManager from "./pages/dashboard/CouponsManager";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import CalendarView from "./pages/dashboard/CalendarView";
 import TableMapPage from "./pages/dashboard/TableMapPage";
+import ShiftManager from "./pages/dashboard/ShiftManager";
+import BlockedDatesManager from "./pages/dashboard/BlockedDatesManager";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +77,8 @@ const AppContent = () => {
         <Route path="/admin/coupons" element={<DashboardLayout requiredRole="admin"><CouponsManager /></DashboardLayout>} />
         <Route path="/admin/calendar" element={<DashboardLayout requiredRole="admin"><CalendarView /></DashboardLayout>} />
         <Route path="/admin/tables" element={<DashboardLayout requiredRole="admin"><TableMapPage /></DashboardLayout>} />
+        <Route path="/admin/shifts" element={<DashboardLayout requiredRole="admin"><ShiftManager /></DashboardLayout>} />
+        <Route path="/admin/blocked-dates" element={<DashboardLayout requiredRole="admin"><BlockedDatesManager /></DashboardLayout>} />
         <Route path="/admin/settings" element={<DashboardLayout requiredRole="admin"><SettingsPage /></DashboardLayout>} />
 
         {/* Manager Dashboard */}
@@ -82,9 +86,12 @@ const AppContent = () => {
         <Route path="/manager/orders" element={<DashboardLayout requiredRole="manager"><OrdersManager /></DashboardLayout>} />
         <Route path="/manager/reservations" element={<DashboardLayout requiredRole="manager"><ReservationsManager /></DashboardLayout>} />
         <Route path="/manager/reviews" element={<DashboardLayout requiredRole="manager"><ReviewsManager /></DashboardLayout>} />
+        <Route path="/manager/inventory" element={<DashboardLayout requiredRole="manager"><InventoryManager /></DashboardLayout>} />
         <Route path="/manager/messages" element={<DashboardLayout requiredRole="manager"><MessagesManager /></DashboardLayout>} />
         <Route path="/manager/calendar" element={<DashboardLayout requiredRole="manager"><CalendarView /></DashboardLayout>} />
         <Route path="/manager/tables" element={<DashboardLayout requiredRole="manager"><TableMapPage /></DashboardLayout>} />
+        <Route path="/manager/shifts" element={<DashboardLayout requiredRole="manager"><ShiftManager /></DashboardLayout>} />
+        <Route path="/manager/blocked-dates" element={<DashboardLayout requiredRole="manager"><BlockedDatesManager /></DashboardLayout>} />
 
         {/* Staff Dashboard */}
         <Route path="/staff" element={<DashboardLayout requiredRole="staff"><StaffOverview /></DashboardLayout>} />
