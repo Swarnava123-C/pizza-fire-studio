@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_dates: {
+        Row: {
+          blocked_date: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_date: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_date?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           created_at: string
@@ -193,6 +214,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          assigned_staff_id: string | null
           coupon_code: string | null
           created_at: string
           customer_email: string
@@ -213,6 +235,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          assigned_staff_id?: string | null
           coupon_code?: string | null
           created_at?: string
           customer_email: string
@@ -233,6 +256,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          assigned_staff_id?: string | null
           coupon_code?: string | null
           created_at?: string
           customer_email?: string
@@ -295,6 +319,51 @@ export type Database = {
           reservation_date?: string
           status?: string
           time_slot?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurant_settings: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          logo_url: string | null
+          notification_email: boolean
+          notification_sms: boolean
+          opening_hours: Json | null
+          phone: string | null
+          restaurant_name: string
+          tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          notification_email?: boolean
+          notification_sms?: boolean
+          opening_hours?: Json | null
+          phone?: string | null
+          restaurant_name?: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          notification_email?: boolean
+          notification_sms?: boolean
+          opening_hours?: Json | null
+          phone?: string | null
+          restaurant_name?: string
+          tagline?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -362,6 +431,39 @@ export type Database = {
           review_text?: string | null
           status?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      staff_shifts: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          responsibilities: string | null
+          shift_date: string
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          responsibilities?: string | null
+          shift_date: string
+          start_time?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          responsibilities?: string | null
+          shift_date?: string
+          start_time?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
