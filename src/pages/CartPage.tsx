@@ -8,7 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag, CreditCard } from "lucide-react";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const CartPage = () => {
   const { items, updateQuantity, removeItem, clearCart, total } = useCart();
@@ -45,11 +51,7 @@ const CartPage = () => {
     toast.success(`${data.discount_percent}% discount applied! You save ₹${discountAmount}`);
   };
 
-  const handleOrder = async () => {
-    if (!form.name || !form.email || !form.phone) return toast.error("Please fill all required fields");
-    if (form.delivery_type === "delivery" && !form.delivery_address) return toast.error("Please enter delivery address");
-
-    setSubmitting(true);
+  const createOrderInDB = async () => {
     const orderId = crypto.randomUUID();
     const finalTotal = total - discount;
 
@@ -68,13 +70,8 @@ const CartPage = () => {
       notes: form.notes || null,
     });
 
-    if (error) {
-      toast.error("Failed to place order");
-      setSubmitting(false);
-      return;
-    }
+    if (error) throw new Error("Failed to create order");
 
-    // Insert order items
     const orderItems = items.map((item) => ({
       order_id: orderId,
       menu_item_id: item.id,
@@ -82,18 +79,102 @@ const CartPage = () => {
       quantity: item.quantity,
       price: item.price,
     }));
-
     await supabase.from("order_items").insert(orderItems);
 
-    // Update coupon usage
-    if (form.coupon_code && discount > 0) {
-      await supabase.rpc("has_role", { _user_id: user?.id || "00000000-0000-0000-0000-000000000000", _role: "user" }); // dummy call to keep connection alive
-    }
+    return { orderId, finalTotal };
+  };
 
-    clearCart();
+  const handleCODOrder = async () => {
+    if (!form.name || !form.email || !form.phone) return toast.error("Please fill all required fields");
+    if (form.delivery_type === "delivery" && !form.delivery_address) return toast.error("Please enter delivery address");
+
+    setSubmitting(true);
+    try {
+      const { orderId } = await createOrderInDB();
+      clearCart();
+      toast.success("Order placed successfully!");
+      navigate(`/order/${orderId}`);
+    } catch {
+      toast.error("Failed to place order");
+    }
     setSubmitting(false);
-    toast.success("Order placed successfully!");
-    navigate(`/order/${orderId}`);
+  };
+
+  const handleRazorpayOrder = async () => {
+    if (!form.name || !form.email || !form.phone) return toast.error("Please fill all required fields");
+    if (form.delivery_type === "delivery" && !form.delivery_address) return toast.error("Please enter delivery address");
+
+    setSubmitting(true);
+    try {
+      const { orderId, finalTotal } = await createOrderInDB();
+
+      // Create Razorpay order
+      const { data: rpOrder, error: rpError } = await supabase.functions.invoke("create-razorpay-order", {
+        body: { amount: finalTotal, receipt: orderId },
+      });
+
+      if (rpError || !rpOrder?.order_id) {
+        toast.error("Failed to initiate payment");
+        setSubmitting(false);
+        return;
+      }
+
+      // Load Razorpay script if not loaded
+      if (!window.Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject();
+          document.body.appendChild(script);
+        });
+      }
+
+      const options = {
+        key: rpOrder.key_id,
+        amount: rpOrder.amount,
+        currency: rpOrder.currency,
+        name: "PizzaFast",
+        description: `Order #${orderId.slice(0, 8)}`,
+        order_id: rpOrder.order_id,
+        handler: async (response: any) => {
+          // Verify payment
+          const { data: verifyData } = await supabase.functions.invoke("verify-razorpay-payment", {
+            body: {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              order_id: orderId,
+            },
+          });
+          if (verifyData?.verified) {
+            clearCart();
+            toast.success("Payment successful! Order confirmed.");
+            navigate(`/order/${orderId}`);
+          } else {
+            toast.error("Payment verification failed");
+          }
+        },
+        prefill: {
+          name: form.name,
+          email: form.email,
+          contact: form.phone,
+        },
+        theme: { color: "#E8642B" },
+        modal: {
+          ondismiss: () => {
+            toast.info("Payment cancelled. Your order is saved — you can pay later.");
+            navigate(`/order/${orderId}`);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      toast.error("Failed to process payment");
+    }
+    setSubmitting(false);
   };
 
   if (items.length === 0 && step === "cart") {
@@ -214,14 +295,24 @@ const CartPage = () => {
                   </div>
                 </div>
 
-                <Button
-                  className="w-full bg-primary text-primary-foreground text-lg py-6"
-                  onClick={handleOrder}
-                  disabled={submitting}
-                >
-                  {submitting ? "Placing Order..." : "Place Order (Cash on Delivery)"}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">Online payment via Razorpay coming soon</p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Button
+                    className="w-full bg-primary text-primary-foreground py-6"
+                    onClick={handleRazorpayOrder}
+                    disabled={submitting}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    {submitting ? "Processing..." : "Pay with Razorpay"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full py-6 border-border"
+                    onClick={handleCODOrder}
+                    disabled={submitting}
+                  >
+                    {submitting ? "Placing..." : "Cash on Delivery"}
+                  </Button>
+                </div>
               </div>
             </>
           )}
