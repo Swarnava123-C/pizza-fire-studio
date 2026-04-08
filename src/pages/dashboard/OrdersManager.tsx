@@ -85,7 +85,7 @@ const OrdersManager = () => {
   };
 
   const assignStaff = async (orderId: string, staffId: string) => {
-    await supabase.from("orders").update({ assigned_staff_id: staffId } as Record<string, unknown>).eq("id", orderId);
+    await supabase.from("orders").update({ assigned_staff_id: staffId }).eq("id", orderId);
     toast.success("Staff assigned");
     load();
   };

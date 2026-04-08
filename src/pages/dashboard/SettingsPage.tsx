@@ -48,7 +48,7 @@ const SettingsPage = () => {
       phone: settings.phone,
       email: settings.email,
       address: settings.address,
-      opening_hours: settings.opening_hours as unknown as Record<string, unknown>,
+      opening_hours: settings.opening_hours as unknown as import("@/integrations/supabase/types").Json,
       logo_url: settings.logo_url,
       notification_email: settings.notification_email,
       notification_sms: settings.notification_sms,
