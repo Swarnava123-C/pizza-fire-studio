@@ -1,33 +1,14 @@
 import {
-  LayoutDashboard,
-  UtensilsCrossed,
-  CalendarDays,
-  ShoppingCart,
-  Star,
-  Package,
-  BarChart3,
-  Users,
-  MessageSquare,
-  Tag,
-  Settings,
-  LogOut,
-  CalendarRange,
-  Map,
+  LayoutDashboard, UtensilsCrossed, CalendarDays, ShoppingCart, Star, Package,
+  BarChart3, Users, MessageSquare, Tag, Settings, LogOut, CalendarRange, Map,
+  Clock, CalendarOff,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
@@ -46,12 +27,14 @@ const navItems: NavItem[] = [
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart, roles: ["admin", "manager", "staff"] },
   { title: "Reservations", url: "/admin/reservations", icon: CalendarDays, roles: ["admin", "manager", "staff"] },
   { title: "Reviews", url: "/admin/reviews", icon: Star, roles: ["admin", "manager"] },
-  { title: "Inventory", url: "/admin/inventory", icon: Package, roles: ["admin"] },
+  { title: "Inventory", url: "/admin/inventory", icon: Package, roles: ["admin", "manager"] },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, roles: ["admin"] },
   { title: "Users", url: "/admin/users", icon: Users, roles: ["admin"] },
   { title: "Messages", url: "/admin/messages", icon: MessageSquare, roles: ["admin", "manager"] },
   { title: "Calendar", url: "/admin/calendar", icon: CalendarRange, roles: ["admin", "manager"] },
   { title: "Tables", url: "/admin/tables", icon: Map, roles: ["admin", "manager"] },
+  { title: "Shifts", url: "/admin/shifts", icon: Clock, roles: ["admin", "manager"] },
+  { title: "Blocked Dates", url: "/admin/blocked-dates", icon: CalendarOff, roles: ["admin", "manager"] },
   { title: "Coupons", url: "/admin/coupons", icon: Tag, roles: ["admin"] },
   { title: "Settings", url: "/admin/settings", icon: Settings, roles: ["admin"] },
 ];
@@ -64,7 +47,6 @@ export function DashboardSidebar() {
   const { role, signOut, user } = useAuth();
 
   const filteredItems = navItems.filter((item) => item.roles.includes(role));
-  // For manager/staff, remap URLs
   const getUrl = (item: NavItem) => {
     if (role === "manager") return item.url.replace("/admin", "/manager");
     if (role === "staff") return item.url.replace("/admin", "/staff");
@@ -109,16 +91,9 @@ export function DashboardSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-2">
         {!collapsed && (
-          <div className="text-xs text-muted-foreground px-2 mb-2 truncate">
-            {user?.email}
-          </div>
+          <div className="text-xs text-muted-foreground px-2 mb-2 truncate">{user?.email}</div>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSignOut}
-          className="w-full justify-start text-muted-foreground hover:text-foreground"
-        >
+        <Button variant="ghost" size="sm" onClick={handleSignOut} className="w-full justify-start text-muted-foreground hover:text-foreground">
           <LogOut className="h-4 w-4 mr-2" />
           {!collapsed && "Sign Out"}
         </Button>
