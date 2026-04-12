@@ -21,9 +21,9 @@ const navLinks = [
 ];
 
 const adminLinks = [
-  { to: "/admin/login", label: "Super Admin Login", icon: Shield },
-  { to: "/manager/login", label: "Manager Login", icon: Users },
-  { to: "/staff/login", label: "Staff Login", icon: UserCheck },
+  { to: "/admin/login", label: "Super Admin", icon: Shield },
+  { to: "/manager/login", label: "Manager Admin", icon: Users },
+  { to: "/staff/login", label: "Staff Admin", icon: UserCheck },
 ];
 
 const Header = () => {

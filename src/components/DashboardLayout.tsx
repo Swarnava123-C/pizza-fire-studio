@@ -24,7 +24,7 @@ const DashboardLayout = ({ children, requiredRole, redirectTo = "/auth" }: Dashb
   }
 
   if (!user) return <Navigate to={redirectTo} replace />;
-  if (!hasRole(requiredRole)) return <Navigate to="/" replace />;
+  if (!hasRole(requiredRole)) return <Navigate to="/unauthorized" replace />;
 
   return (
     <SidebarProvider>
