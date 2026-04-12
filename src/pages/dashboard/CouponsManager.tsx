@@ -6,39 +6,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, X, Save } from "lucide-react";
+import { Plus, Trash2, X, Save, Gift } from "lucide-react";
+import { DashboardLoading, DashboardEmpty, DashboardError } from "@/components/DashboardStates";
 
 interface Coupon {
-  id: string;
-  code: string;
-  discount_percent: number;
-  max_uses: number | null;
-  used_count: number;
-  expires_at: string | null;
-  is_active: boolean;
-  created_at: string;
+  id: string; code: string; discount_percent: number; max_uses: number | null;
+  used_count: number; expires_at: string | null; is_active: boolean; created_at: string;
 }
 
 const CouponsManager = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ code: "", discount_percent: "", max_uses: "", expires_at: "" });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const { data } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
-    if (data) setCoupons(data as Coupon[]);
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
+      if (err) throw err;
+      setCoupons((data || []) as Coupon[]);
+    } catch (e: any) {
+      setError(e.message || "Failed to load coupons");
+    }
+    setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
   const handleAdd = async () => {
     if (!form.code || !form.discount_percent) return toast.error("Code and discount required");
-    await supabase.from("coupons").insert({
-      code: form.code.toUpperCase(),
-      discount_percent: parseInt(form.discount_percent),
-      max_uses: form.max_uses ? parseInt(form.max_uses) : null,
-      expires_at: form.expires_at || null,
+    const { error } = await supabase.from("coupons").insert({
+      code: form.code.toUpperCase(), discount_percent: parseInt(form.discount_percent),
+      max_uses: form.max_uses ? parseInt(form.max_uses) : null, expires_at: form.expires_at || null,
     });
+    if (error) return toast.error("Failed to create coupon");
     toast.success("Coupon created");
     setForm({ code: "", discount_percent: "", max_uses: "", expires_at: "" });
     setShowAdd(false);
@@ -55,6 +59,9 @@ const CouponsManager = () => {
     toast.success("Deleted");
     load();
   };
+
+  if (loading) return <DashboardLoading count={2} />;
+  if (error) return <DashboardError message={error} onRetry={load} />;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -80,24 +87,26 @@ const CouponsManager = () => {
         </div>
       )}
 
-      <div className="space-y-2">
-        {coupons.map((c) => (
-          <div key={c.id} className={`glass-card p-4 flex items-center gap-4 flex-wrap ${!c.is_active ? "opacity-50" : ""}`}>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-semibold text-foreground">{c.code}</span>
-                <Badge className="bg-accent/20 text-accent">{c.discount_percent}% off</Badge>
-                {c.max_uses && <span className="text-xs text-muted-foreground">{c.used_count}/{c.max_uses} used</span>}
+      {coupons.length === 0 && !showAdd ? (
+        <DashboardEmpty icon={Gift} title="No coupons" description="Create promo codes to attract customers." />
+      ) : (
+        <div className="space-y-2">
+          {coupons.map((c) => (
+            <div key={c.id} className={`glass-card p-4 flex items-center gap-4 flex-wrap ${!c.is_active ? "opacity-50" : ""}`}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-semibold text-foreground">{c.code}</span>
+                  <Badge className="bg-accent/20 text-accent">{c.discount_percent}% off</Badge>
+                  {c.max_uses && <span className="text-xs text-muted-foreground">{c.used_count}/{c.max_uses} used</span>}
+                </div>
+                {c.expires_at && <span className="text-xs text-muted-foreground">Expires: {new Date(c.expires_at).toLocaleDateString()}</span>}
               </div>
-              {c.expires_at && <span className="text-xs text-muted-foreground">Expires: {new Date(c.expires_at).toLocaleDateString()}</span>}
+              <Switch checked={c.is_active} onCheckedChange={() => toggleActive(c.id, c.is_active)} />
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(c.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
             </div>
-            <Switch checked={c.is_active} onCheckedChange={() => toggleActive(c.id, c.is_active)} />
-            <Button variant="ghost" size="sm" onClick={() => handleDelete(c.id)} className="text-destructive">
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -7,19 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, X, Edit2, Save } from "lucide-react";
+import { Trash2, Plus, X, Edit2, Save, UtensilsCrossed } from "lucide-react";
+import { DashboardLoading, DashboardEmpty, DashboardError } from "@/components/DashboardStates";
 
 interface MenuItem {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  category: string;
-  featured: boolean;
-  chef_recommended: boolean;
-  image_url: string | null;
-  created_at: string;
-  updated_at: string;
+  id: string; name: string; description: string | null; price: number; category: string;
+  featured: boolean; chef_recommended: boolean; image_url: string | null; created_at: string; updated_at: string;
 }
 
 const categories = ["Pizzas", "Burgers", "Pasta", "Beverages", "Desserts"];
@@ -28,11 +21,22 @@ const MenuManager = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const { data } = await supabase.from("menu_items").select("*").order("category").order("name");
-    if (data) setItems(data as MenuItem[]);
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.from("menu_items").select("*").order("category").order("name");
+      if (err) throw err;
+      setItems((data || []) as MenuItem[]);
+    } catch (e: any) {
+      setError(e.message || "Failed to load menu");
+    }
+    setLoading(false);
   };
+
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: string) => {
@@ -47,6 +51,9 @@ const MenuManager = () => {
     load();
   };
 
+  if (loading) return <DashboardLoading count={4} />;
+  if (error) return <DashboardError message={error} onRetry={load} />;
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       <div className="flex justify-between items-center">
@@ -58,39 +65,39 @@ const MenuManager = () => {
 
       {showAdd && <MenuItemForm onSave={() => { setShowAdd(false); load(); }} onCancel={() => setShowAdd(false)} />}
 
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.id} className="glass-card p-4">
-            {editId === item.id ? (
-              <MenuItemForm item={item} onSave={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
-            ) : (
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-foreground">{item.name}</span>
-                    <Badge variant="outline" className="text-xs">{item.category}</Badge>
-                    {item.featured && <Badge className="bg-accent text-accent-foreground text-xs">Featured</Badge>}
-                    {item.chef_recommended && <Badge className="bg-primary text-primary-foreground text-xs">Chef's Pick</Badge>}
+      {items.length === 0 && !showAdd ? (
+        <DashboardEmpty icon={UtensilsCrossed} title="No menu items" description="Add your first menu item to get started." />
+      ) : (
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="glass-card p-4">
+              {editId === item.id ? (
+                <MenuItemForm item={item} onSave={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
+              ) : (
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-foreground">{item.name}</span>
+                      <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                      {item.featured && <Badge className="bg-accent text-accent-foreground text-xs">Featured</Badge>}
+                      {item.chef_recommended && <Badge className="bg-primary text-primary-foreground text-xs">Chef's Pick</Badge>}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{item.description}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">{item.description}</p>
+                  <span className="font-display text-xl text-primary">₹{item.price}</span>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => toggleField(item.id, "featured", item.featured)}>
+                      {item.featured ? "Unfeature" : "Feature"}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditId(item.id)}><Edit2 className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
                 </div>
-                <span className="font-display text-xl text-primary">₹{item.price}</span>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => toggleField(item.id, "featured", item.featured)}>
-                    {item.featured ? "Unfeature" : "Feature"}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setEditId(item.id)}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -108,7 +115,6 @@ const MenuItemForm = ({ item, onSave, onCancel }: { item?: MenuItem; onSave: () 
     if (!name || !price) return toast.error("Name and price are required");
     setSaving(true);
     const payload = { name, description, price: parseInt(price), category, featured, chef_recommended: chefRec };
-
     if (item) {
       await supabase.from("menu_items").update(payload).eq("id", item.id);
       toast.success("Updated");
@@ -140,7 +146,7 @@ const MenuItemForm = ({ item, onSave, onCancel }: { item?: MenuItem; onSave: () 
         <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={onCancel}><X className="w-4 h-4" /></Button>
         <Button size="sm" disabled={saving} onClick={handleSave} className="bg-primary text-primary-foreground">
-          <Save className="w-4 h-4 mr-1" /> Save
+          <Save className="w-4 h-4 mr-1" /> {saving ? "Saving..." : "Save"}
         </Button>
       </div>
     </div>

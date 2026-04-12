@@ -5,25 +5,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Trash2, AlertTriangle, X } from "lucide-react";
+import { Plus, Save, Trash2, AlertTriangle, X, Package } from "lucide-react";
+import { DashboardLoading, DashboardEmpty, DashboardError } from "@/components/DashboardStates";
 
 interface InventoryItem {
-  id: string;
-  ingredient_name: string;
-  quantity: number;
-  unit: string;
-  low_stock_threshold: number;
-  is_low_stock: boolean;
+  id: string; ingredient_name: string; quantity: number; unit: string;
+  low_stock_threshold: number; is_low_stock: boolean;
 }
 
 const InventoryManager = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [newItem, setNewItem] = useState({ ingredient_name: "", quantity: "", unit: "kg", low_stock_threshold: "5" });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const { data } = await supabase.from("inventory").select("*").order("ingredient_name");
-    if (data) setItems(data as InventoryItem[]);
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.from("inventory").select("*").order("ingredient_name");
+      if (err) throw err;
+      setItems((data || []) as InventoryItem[]);
+    } catch (e: any) {
+      setError(e.message || "Failed to load inventory");
+    }
+    setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
@@ -32,13 +39,11 @@ const InventoryManager = () => {
     if (!newItem.ingredient_name) return toast.error("Name required");
     const qty = parseFloat(newItem.quantity) || 0;
     const threshold = parseFloat(newItem.low_stock_threshold) || 5;
-    await supabase.from("inventory").insert({
-      ingredient_name: newItem.ingredient_name,
-      quantity: qty,
-      unit: newItem.unit,
-      low_stock_threshold: threshold,
-      is_low_stock: qty <= threshold,
+    const { error } = await supabase.from("inventory").insert({
+      ingredient_name: newItem.ingredient_name, quantity: qty, unit: newItem.unit,
+      low_stock_threshold: threshold, is_low_stock: qty <= threshold,
     });
+    if (error) return toast.error("Failed to add item");
     toast.success("Added");
     setNewItem({ ingredient_name: "", quantity: "", unit: "kg", low_stock_threshold: "5" });
     setShowAdd(false);
@@ -55,6 +60,9 @@ const InventoryManager = () => {
     toast.success("Deleted");
     load();
   };
+
+  if (loading) return <DashboardLoading count={3} />;
+  if (error) return <DashboardError message={error} onRetry={load} />;
 
   const lowStockCount = items.filter((i) => i.is_low_stock).length;
 
@@ -89,30 +97,27 @@ const InventoryManager = () => {
         </div>
       )}
 
-      <div className="space-y-2">
-        {items.map((item) => (
-          <div key={item.id} className={`glass-card p-4 flex items-center gap-4 flex-wrap ${item.is_low_stock ? "border-yellow-500/30" : ""}`}>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{item.ingredient_name}</span>
-                {item.is_low_stock && <Badge className="bg-yellow-600/20 text-yellow-400 text-xs">Low Stock</Badge>}
+      {items.length === 0 && !showAdd ? (
+        <DashboardEmpty icon={Package} title="No inventory items" description="Add ingredients to track stock levels." />
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={item.id} className={`glass-card p-4 flex items-center gap-4 flex-wrap ${item.is_low_stock ? "border-yellow-500/30" : ""}`}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground">{item.ingredient_name}</span>
+                  {item.is_low_stock && <Badge className="bg-yellow-600/20 text-yellow-400 text-xs">Low Stock</Badge>}
+                </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Input type="number" value={item.quantity} onChange={(e) => updateQty(item.id, parseFloat(e.target.value) || 0, item.low_stock_threshold)} className="w-20 bg-background border-border text-center" />
+                <span className="text-sm text-muted-foreground">{item.unit}</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
             </div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                value={item.quantity}
-                onChange={(e) => updateQty(item.id, parseFloat(e.target.value) || 0, item.low_stock_threshold)}
-                className="w-20 bg-background border-border text-center"
-              />
-              <span className="text-sm text-muted-foreground">{item.unit}</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive">
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 };

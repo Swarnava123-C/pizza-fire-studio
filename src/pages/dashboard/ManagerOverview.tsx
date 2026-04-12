@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, CalendarDays, MessageSquare, Star } from "lucide-react";
+import { DashboardLoading, DashboardError } from "@/components/DashboardStates";
 
 const StatCard = ({ icon: Icon, label, value, color }: { icon: typeof ShoppingCart; label: string; value: string | number; color: string }) => (
-  <div className="glass-card p-5">
+  <div className="glass-card p-5 transition-transform hover:scale-[1.02]">
     <div className="flex items-center gap-3">
-      <div className={`p-2.5 rounded-lg ${color}`}>
-        <Icon className="w-5 h-5 text-white" />
-      </div>
+      <div className={`p-2.5 rounded-lg ${color}`}><Icon className="w-5 h-5 text-white" /></div>
       <div>
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="text-2xl font-display text-foreground">{value}</p>
@@ -19,9 +18,13 @@ const StatCard = ({ icon: Icon, label, value, color }: { icon: typeof ShoppingCa
 
 const ManagerOverview = () => {
   const [stats, setStats] = useState({ pendingOrders: 0, todayReservations: 0, pendingReviews: 0, messages: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const today = new Date().toISOString().split("T")[0];
       const [orders, reservations, reviews, messages] = await Promise.all([
         supabase.from("orders").select("id", { count: "exact" }).in("status", ["pending", "preparing"]),
@@ -29,15 +32,23 @@ const ManagerOverview = () => {
         supabase.from("reviews").select("id", { count: "exact" }).eq("status", "pending"),
         supabase.from("contact_submissions").select("id", { count: "exact" }).eq("resolved", false),
       ]);
+      if (orders.error) throw orders.error;
       setStats({
         pendingOrders: orders.count || 0,
         todayReservations: reservations.count || 0,
         pendingReviews: reviews.count || 0,
         messages: messages.count || 0,
       });
-    };
-    load();
-  }, []);
+    } catch (e: any) {
+      setError(e.message || "Failed to load data");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <DashboardLoading count={4} />;
+  if (error) return <DashboardError message={error} onRetry={load} />;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
