@@ -15,6 +15,7 @@ import ReservationsPage from "./pages/ReservationsPage";
 import ContactPage from "./pages/ContactPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 import RoleLoginPage from "@/components/RoleLoginPage";
 import CartPage from "./pages/CartPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
@@ -58,6 +59,7 @@ const AppContent = () => {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/order/:id" element={<OrderTrackingPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Role login pages */}
         <Route path="/admin/login" element={<RoleLoginPage roleKey="admin" />} />
